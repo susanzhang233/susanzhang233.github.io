@@ -3,7 +3,7 @@
 #
 
 # Name of your site (displayed in the header)
-name: Susan's Blog 0 for PIC16B
+name: Susan's Blog for PIC16B
 
 # Short bio or description (displayed in the header)
 description: Pocket Wallflower
@@ -21,7 +21,7 @@ footer-links:
   email:
   facebook:
   flickr:
-  github: PIC16B/pic16b.github.io # replace with your repo
+  github: susanzhang233/susanzhang233.github.io # replace with your repo
   instagram:
   linkedin:
   pinterest:
