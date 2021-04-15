@@ -1342,7 +1342,7 @@ def plot_line_cont2(df):
     year = df['Year'].unique()
     fig = px.scatter(df, x="Month", y="Temp", color="Name",
                hover_name="Name",
-        title = 'Monthly avg Temperature of countries(& regions) in ' + cont[0] + ' in ' + str(year))
+        title = 'Monthly avg Temperature of countries in ' + cont[0] + ' in ' + str(year))
     fig.show()
     write_html(fig, cont[0] + ".html")
 ```
@@ -1351,19 +1351,19 @@ def plot_line_cont2(df):
 ```python
 df3.groupby(['Continent']).apply(plot_line_cont2)
 ```
-{% include Africa.html %}
+{% include africa.html %}
 
-{% include Antarctica.html %}
+{% include antarctica.html %}
 
-{% include Asia.html %}
+{% include asia.html %}
 
-{% include Europe.html %}
+{% include europe.html %}
 
-{% include North-America.html %}
+{% include north-America.html %}
 
-{% include South-America.html %}
+{% include south-America.html %}
 
-{% include Oceania.html %}
+{% include oceania.html %}
 
 
 From the above graphs, we could observe that monthly temperature change also has some patterns corresponding to different continents. In Asia, Europe, and North America, mid-year temperature tends to be the highest. While for South America and Antarctica, things are the opposite. Perhaps that's why Santa Claus wears T-shirts in these countries!
