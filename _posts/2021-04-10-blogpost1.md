@@ -1,0 +1,1374 @@
+---
+layout: post
+title: Assignment - Blog Post 1
+---
+
+In this blog, we'll demonstrate the basic utilization of the plotly pacakge, and some basic databse usage with sql. Databases increases the efficiency for treating large datasets. We will be using the temperature dataset, together with temperature stations and country codes, to create some interactive geographically representative plots corresponding to temperatures.
+
+First, we would like to import some needed packages, make sure you have installed them properly. Despite pandas and numpy that we are aready familiarized with, `sqlite3` is new package that enables us to work with databases using Python commands.
+
+
+```python
+import sqlite3
+import pandas as pd
+import numpy as np
+```
+
+# Part 1 Introducing database & data prehandling
+
+Inspecting the temperature dataset elsewhere, you might discover that it contains more than ten thousands of rows. Therefore, when only a subset of the complete dataset is need, it is possible to first store the complete dataset into a **database** and query out specific rows or columns in need.
+
+### Creating a database
+
+The following line would create a database in the current directory. For future usage of the database, the same line could be used.
+
+
+```python
+conn = sqlite3.connect("temps.db") # create a database in current directory called temps.db
+```
+
+Then, we would like to read in the dataset files to prepare to populate the *temps* database that we've just created. The lastline just creates a new column that extracts the country codes in the original station id. The abbreviation would be used for future merging.
+
+
+```python
+#temperatures = pd.read_csv('temps.csv')
+stations = pd.read_csv('station-metadata.csv')
+countries = pd.read_csv('countries.csv')
+stations['ID_'] = stations['ID'].str[0:2]
+```
+
+
+```python
+countries.head(5)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FIPS 10-4</th>
+      <th>ISO 3166</th>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>AF</td>
+      <td>AF</td>
+      <td>Afghanistan</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>AX</td>
+      <td>-</td>
+      <td>Akrotiri</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>AL</td>
+      <td>AL</td>
+      <td>Albania</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>AG</td>
+      <td>DZ</td>
+      <td>Algeria</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>AQ</td>
+      <td>AS</td>
+      <td>American Samoa</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+```python
+stations.head(5)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>LATITUDE</th>
+      <th>LONGITUDE</th>
+      <th>STNELEV</th>
+      <th>NAME</th>
+      <th>ID_</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>ACW00011604</td>
+      <td>57.7667</td>
+      <td>11.8667</td>
+      <td>18.0</td>
+      <td>SAVE</td>
+      <td>AC</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>AE000041196</td>
+      <td>25.3330</td>
+      <td>55.5170</td>
+      <td>34.0</td>
+      <td>SHARJAH_INTER_AIRP</td>
+      <td>AE</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>AEM00041184</td>
+      <td>25.6170</td>
+      <td>55.9330</td>
+      <td>31.0</td>
+      <td>RAS_AL_KHAIMAH_INTE</td>
+      <td>AE</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>AEM00041194</td>
+      <td>25.2550</td>
+      <td>55.3640</td>
+      <td>10.4</td>
+      <td>DUBAI_INTL</td>
+      <td>AE</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>AEM00041216</td>
+      <td>24.4300</td>
+      <td>54.4700</td>
+      <td>3.0</td>
+      <td>ABU_DHABI_BATEEN_AIR</td>
+      <td>AE</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+Have a look of the original temperature dataset. Currently, it contains the monthly average temperature values at specific stations for certain years. 
+
+
+```python
+temperatures = pd.read_csv('temps.csv')
+#temperatures = prepare_df(temperatures)
+```
+
+
+```python
+temperatures.head(5)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>Year</th>
+      <th>VALUE1</th>
+      <th>VALUE2</th>
+      <th>VALUE3</th>
+      <th>VALUE4</th>
+      <th>VALUE5</th>
+      <th>VALUE6</th>
+      <th>VALUE7</th>
+      <th>VALUE8</th>
+      <th>VALUE9</th>
+      <th>VALUE10</th>
+      <th>VALUE11</th>
+      <th>VALUE12</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>ACW00011604</td>
+      <td>1961</td>
+      <td>-89.0</td>
+      <td>236.0</td>
+      <td>472.0</td>
+      <td>773.0</td>
+      <td>1128.0</td>
+      <td>1599.0</td>
+      <td>1570.0</td>
+      <td>1481.0</td>
+      <td>1413.0</td>
+      <td>1174.0</td>
+      <td>510.0</td>
+      <td>-39.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>ACW00011604</td>
+      <td>1962</td>
+      <td>113.0</td>
+      <td>85.0</td>
+      <td>-154.0</td>
+      <td>635.0</td>
+      <td>908.0</td>
+      <td>1381.0</td>
+      <td>1510.0</td>
+      <td>1393.0</td>
+      <td>1163.0</td>
+      <td>994.0</td>
+      <td>323.0</td>
+      <td>-126.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>ACW00011604</td>
+      <td>1963</td>
+      <td>-713.0</td>
+      <td>-553.0</td>
+      <td>-99.0</td>
+      <td>541.0</td>
+      <td>1224.0</td>
+      <td>1627.0</td>
+      <td>1620.0</td>
+      <td>1596.0</td>
+      <td>1332.0</td>
+      <td>940.0</td>
+      <td>566.0</td>
+      <td>-108.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>ACW00011604</td>
+      <td>1964</td>
+      <td>62.0</td>
+      <td>-85.0</td>
+      <td>55.0</td>
+      <td>738.0</td>
+      <td>1219.0</td>
+      <td>1442.0</td>
+      <td>1506.0</td>
+      <td>1557.0</td>
+      <td>1221.0</td>
+      <td>788.0</td>
+      <td>546.0</td>
+      <td>112.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>ACW00011604</td>
+      <td>1965</td>
+      <td>44.0</td>
+      <td>-105.0</td>
+      <td>38.0</td>
+      <td>590.0</td>
+      <td>987.0</td>
+      <td>1500.0</td>
+      <td>1487.0</td>
+      <td>1477.0</td>
+      <td>1377.0</td>
+      <td>974.0</td>
+      <td>31.0</td>
+      <td>-178.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+Then, we create a function to prepare the *temperature* dataset into a form we want. The function mainly conducts stacking to expand the original dataset by month. The last line in the function adds a new column, "FIPS 10-4", which will be used later for merging with the country code dataset. The merge is expected to give out what country each temperature measurement station is located in.
+
+
+```python
+def prepare_df(df):
+    df = df.set_index(keys=["ID", "Year"])
+    df = df.stack()
+    df = df.reset_index()
+    df = df.rename(columns = {"level_2"  : "Month" , 0 : "Temp"})
+    df["Month"] = df["Month"].str[5:].astype(int)
+    df["Temp"]  = df["Temp"] / 100
+    df["FIPS 10-4"] = df["ID"].str[0:2]
+    return(df)
+```
+
+Take a look at the prepared temperatures dataset, it will contain monthly temperature averages at specific stations, as well as their country codes.
+
+
+```python
+temperatures = prepare_df(temperatures)
+temperatures.head(5)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>Year</th>
+      <th>Month</th>
+      <th>Temp</th>
+      <th>FIPS 10-4</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>ACW00011604</td>
+      <td>1961</td>
+      <td>1</td>
+      <td>-0.89</td>
+      <td>AC</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>ACW00011604</td>
+      <td>1961</td>
+      <td>2</td>
+      <td>2.36</td>
+      <td>AC</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>ACW00011604</td>
+      <td>1961</td>
+      <td>3</td>
+      <td>4.72</td>
+      <td>AC</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>ACW00011604</td>
+      <td>1961</td>
+      <td>4</td>
+      <td>7.73</td>
+      <td>AC</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>ACW00011604</td>
+      <td>1961</td>
+      <td>5</td>
+      <td>11.28</td>
+      <td>AC</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+Now, we are finally ready to populate our database. We'll be creating three tables: `temperature`, `countries`, and `stations`. For countries and stations, we would populate them into the database directly. While for the temperature table, we would first give it to the prepare_df function. Three tables would be saved in the form as demonstrated above.
+
+The df_iter object makes a dataframe iterable by specified chunksize. if_exists checks if that some chunk is already added to sql, and execute the following block, making sure we won't overwrite each time.
+
+
+```python
+df_iter = pd.read_csv("temps.csv", chunksize = 100000)
+
+for df in df_iter:
+    df = prepare_df(df)
+    
+    df.to_sql("temperatures", conn, if_exists = "append", index = False)
+
+stations.to_sql("stations", conn, if_exists = "replace", index = False)
+countries.to_sql("countries", conn, if_exists = "replace", index = False)
+```
+
+    /Users/feishu/opt/anaconda3/envs/PIC16B/lib/python3.7/site-packages/pandas/core/generic.py:2789: UserWarning: The spaces in these column names will not be changed. In pandas versions < 0.14, spaces were converted to underscores.
+      method=method,
+
+
+Now, we're supposed to have three dataframes in the database, let's check!
+
+
+```python
+cursor = conn.cursor()
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+print(cursor.fetchall())
+```
+
+    [('temperatures',), ('stations',), ('countries',)]
+
+
+Don't forget to close your connections!
+
+
+```python
+conn.close()
+```
+
+# PART 2 SQL Query
+
+In this part, we would create a demonstration of how to query specific data out from sql, and generating a plot from the queried dataset. We will be implementing two functions, one for data query and one for plot generation.
+
+We will be creating a query_climate_database() function. The function is expected to return a Pandas dataframe of temperature readings for the specified country, in the specified date range, in the specified month of the year.
+
+
+```python
+def query_climate_database(country, year_begin, year_end, month):
+    '''param country: a string of the country for which data should be returned;
+       year_begin, year_end: two integers specifying the time interval of data be returned;
+       month: an integer giving the month of data to be returned.
+       @return a Pandas dataframe of temperature readings for the specified country, 
+       in the specified date range, in the specified month of the year
+    '''
+    #first create a connection with the database
+    conn = sqlite3.connect("temps.db")
+    #basic queries
+    #containing SELECT, specifies column(s) to be returned;
+    #FROM, from which table(s)
+    #LEFT JOIN, merge datasets for specific outcomes
+    #WHERE, row specification
+    cmd = \
+    """
+    SELECT S.name, S.latitude, S.longitude, C.name, T.year, T.month, T.temp
+    FROM temperatures T
+    LEFT JOIN stations S ON T.id = S.id
+    LEFT JOIN countries C ON S.id_ = C.`fips 10-4`
+    WHERE C.name = ? AND (T.year BETWEEN ? AND ?) AND T.month = ?
+    """
+    
+    #the '?' syntax in WHERE enables parameterization in a query,
+    #and we'll supply the parameters sequentially here
+    param = (country, year_begin, year_end, month,)
+    
+    #the following line reads a query and returns the dataset from the database 
+    df = pd.read_sql_query(cmd, conn, params=param)
+    conn.close()#make sure to close the connection after use
+    return df
+```
+
+
+```python
+df = query_climate_database(country = "India", 
+                       year_begin = 1980, 
+                       year_end = 2020,
+                       month = 1)
+```
+
+Now, have a look of the dataset that we've queried out! It contains the temperatures in specific month, year, and station, as well as the latitude and longitude of the station, for a specific country.
+
+
+```python
+df
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>NAME</th>
+      <th>LATITUDE</th>
+      <th>LONGITUDE</th>
+      <th>Name</th>
+      <th>Year</th>
+      <th>Month</th>
+      <th>Temp</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>PBO_ANANTAPUR</td>
+      <td>14.583</td>
+      <td>77.633</td>
+      <td>India</td>
+      <td>1980</td>
+      <td>1</td>
+      <td>23.48</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>PBO_ANANTAPUR</td>
+      <td>14.583</td>
+      <td>77.633</td>
+      <td>India</td>
+      <td>1981</td>
+      <td>1</td>
+      <td>24.57</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>PBO_ANANTAPUR</td>
+      <td>14.583</td>
+      <td>77.633</td>
+      <td>India</td>
+      <td>1982</td>
+      <td>1</td>
+      <td>24.19</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>PBO_ANANTAPUR</td>
+      <td>14.583</td>
+      <td>77.633</td>
+      <td>India</td>
+      <td>1983</td>
+      <td>1</td>
+      <td>23.51</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>PBO_ANANTAPUR</td>
+      <td>14.583</td>
+      <td>77.633</td>
+      <td>India</td>
+      <td>1984</td>
+      <td>1</td>
+      <td>24.81</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>3147</th>
+      <td>DARJEELING</td>
+      <td>27.050</td>
+      <td>88.270</td>
+      <td>India</td>
+      <td>1983</td>
+      <td>1</td>
+      <td>5.10</td>
+    </tr>
+    <tr>
+      <th>3148</th>
+      <td>DARJEELING</td>
+      <td>27.050</td>
+      <td>88.270</td>
+      <td>India</td>
+      <td>1986</td>
+      <td>1</td>
+      <td>6.90</td>
+    </tr>
+    <tr>
+      <th>3149</th>
+      <td>DARJEELING</td>
+      <td>27.050</td>
+      <td>88.270</td>
+      <td>India</td>
+      <td>1994</td>
+      <td>1</td>
+      <td>8.10</td>
+    </tr>
+    <tr>
+      <th>3150</th>
+      <td>DARJEELING</td>
+      <td>27.050</td>
+      <td>88.270</td>
+      <td>India</td>
+      <td>1995</td>
+      <td>1</td>
+      <td>5.60</td>
+    </tr>
+    <tr>
+      <th>3151</th>
+      <td>DARJEELING</td>
+      <td>27.050</td>
+      <td>88.270</td>
+      <td>India</td>
+      <td>1997</td>
+      <td>1</td>
+      <td>5.70</td>
+    </tr>
+  </tbody>
+</table>
+<p>3152 rows × 7 columns</p>
+</div>
+
+
+
+# PART 3 Plot with Plotly
+
+In this part, we wish to create a plot using plotly to answer the following question:
+
+>How does the average yearly change in temperature vary within a given country?
+
+To answer this question, we'll need to first calculate a yearly increase of stations in a specific country for a specific month.
+
+One method great for calculating extimate yearly increase is the LinearRegression model in sklearn. So we'll import that, along with the plotly package.
+
+
+```python
+pip install plotly
+```
+
+    Requirement already satisfied: plotly in /Users/feishu/opt/anaconda3/envs/PIC16B/lib/python3.7/site-packages (4.14.3)
+    Requirement already satisfied: retrying>=1.3.3 in /Users/feishu/opt/anaconda3/envs/PIC16B/lib/python3.7/site-packages (from plotly) (1.3.3)
+    Requirement already satisfied: six in /Users/feishu/opt/anaconda3/envs/PIC16B/lib/python3.7/site-packages (from plotly) (1.15.0)
+    Note: you may need to restart the kernel to use updated packages.
+
+
+
+```python
+from sklearn.linear_model import LinearRegression
+from plotly import express as px
+```
+
+We'll define a function that estimates the yearly increase for specific stations.
+
+
+```python
+def coef(data_group):
+    x = data_group[["Year"]] # 2 brackets because X should be a df
+    y = data_group["Temp"]   # 1 bracket because y should be a series
+    LR = LinearRegression()
+    LR.fit(x, y)
+    return LR.coef_[0]
+```
+
+Then, we'll define a `temperature_coefficient_plot` function that plots a point for each station in a specific country. With plotly, the color of the point will reflect an estimate of the yearly change in temperature during the specified month and time period at that station.
+
+
+```python
+def temperature_coefficient_plot(country, year_begin, year_end, month, min_obs, **kwargs):
+    '''country:  string of the country for which data should be returned;
+        year_begin, year_end: two integers specifying the time interval of data be returned;
+        min_obs: minimum required number of years of data for any given station. 
+        (only data for stations with at least min_obs years worth of data would be considered);
+        **kwargs: additional keyword arguments passed to px.scatter_mapbox(). 
+    '''
+    #first obtain the dataframe from above function:
+    df = query_climate_database(country = country, 
+                       year_begin = year_begin, 
+                       year_end = year_end,
+                       month = month)
+    #add a new column to df with number of years of data there are for that station
+    df["size"] = df.groupby(["NAME"])['NAME'].transform(lambda x: x.shape[0])
+    #filter out stations without enough yearly data, inclusive
+    df_ = df[df['size'] >= min_obs]
+    
+    #estimate yearly increase for each station
+    coefs = df_.groupby(["NAME", "Month"]).apply(coef)#
+    coefs = coefs.reset_index()
+    
+    #merge the estimates with stations,
+    #therefore each estimate would have there corresponding latitude and longitude
+    coefs_ = pd.merge(coefs, stations, on = ["NAME"])
+    #rename coef column to "Estimated Yearly Increase(Celsius)" and round the coefs
+    coefs_ = coefs_.rename(columns = {0:"Estimated Yearly Increase(Celsius)"})
+    coefs_ = coefs_[["Estimated Yearly Increase(Celsius)", 'NAME', 'LATITUDE','LONGITUDE']]
+    coefs_['Estimated Yearly Increase(Celsius)'] = coefs_['Estimated Yearly Increase(Celsius)'].round(4)
+    
+    #create plotly plot! add titles and hover overs
+    fig = px.scatter_mapbox(coefs_, 
+                        lat = "LATITUDE",
+                        lon = "LONGITUDE", 
+                        hover_name = "NAME", 
+                        color = "Estimated Yearly Increase(Celsius)", 
+                        title="Estimates of yearly increase in Temperature in January for stations in "
+                            + country +", years " + str(year_begin) + " - " + str(year_end),
+                        **kwargs)
+
+    #fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    return fig
+    
+```
+
+
+```python
+color_map = px.colors.diverging.RdGy_r # choose a colormap
+
+#run the function to generate plotly plot
+fig = temperature_coefficient_plot("India", 1980, 2020, 1, 
+                                   min_obs = 10,
+                                   zoom = 2,
+                                   mapbox_style="carto-positron",
+                                   color_continuous_scale=color_map)
+
+fig.show()
+```
+{% include india-temp-esti.html %}
+
+From the plot, we could see that the estimate yearly change of temperature in India various geographically, it might correspond to specific factors, such as distance to the ocean, etc.
+
+Save it as a html form!
+
+
+```python
+from plotly.io import write_html
+```
+
+
+```python
+write_html(fig, "india_temp_esti.html")
+```
+
+# Part 4 Continental temperature Change
+
+In this part, I would like to visualize how temperature alteration differs in the northern and southern hemisphere. First, it might be helpful to create a function that selects temperature change measured by stations at the same latitude from two hemispheres.
+
+
+```python
+#conn = sqlite3.connect("temps.db")
+def query_compare_latitude(lat):
+    '''returns a dataframe containing monthly temps at stations
+    for the specified latitude from two hemispheres
+    '''
+    conn = sqlite3.connect("temps.db")
+    cmd = \
+    """
+    SELECT T.id, T.month, T.temp, S.latitude, S.longitude, S.name, T.year
+    FROM temperatures T
+    LEFT JOIN stations S ON T.id = S.id
+    WHERE S.latitude =? OR S.latitude =?
+    """
+    params = (lat, -lat ,)
+
+    df = pd.read_sql_query(cmd,conn, params = params )
+    #df_south = pd.read_sql_query(cmd_s, conn)
+    conn.close()
+    return df
+```
+
+
+```python
+df = query_compare_latitude(30)
+```
+
+Take a look at our dataframe, it contains monthly temperature measurements at specified latitude.
+
+
+```python
+df
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>Month</th>
+      <th>Temp</th>
+      <th>LATITUDE</th>
+      <th>LONGITUDE</th>
+      <th>NAME</th>
+      <th>Year</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>CHM00056257</td>
+      <td>1</td>
+      <td>-5.24</td>
+      <td>30.0</td>
+      <td>100.267</td>
+      <td>LITANG</td>
+      <td>1953</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>CHM00056257</td>
+      <td>2</td>
+      <td>-3.82</td>
+      <td>30.0</td>
+      <td>100.267</td>
+      <td>LITANG</td>
+      <td>1953</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>CHM00056257</td>
+      <td>3</td>
+      <td>2.54</td>
+      <td>30.0</td>
+      <td>100.267</td>
+      <td>LITANG</td>
+      <td>1953</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>CHM00056257</td>
+      <td>4</td>
+      <td>4.38</td>
+      <td>30.0</td>
+      <td>100.267</td>
+      <td>LITANG</td>
+      <td>1953</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>CHM00056257</td>
+      <td>5</td>
+      <td>7.69</td>
+      <td>30.0</td>
+      <td>100.267</td>
+      <td>LITANG</td>
+      <td>1953</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2057</th>
+      <td>XXXLT838036</td>
+      <td>1</td>
+      <td>18.60</td>
+      <td>30.0</td>
+      <td>-140.000</td>
+      <td>SHIP_STATION_N</td>
+      <td>1974</td>
+    </tr>
+    <tr>
+      <th>2058</th>
+      <td>XXXLT838036</td>
+      <td>2</td>
+      <td>17.90</td>
+      <td>30.0</td>
+      <td>-140.000</td>
+      <td>SHIP_STATION_N</td>
+      <td>1974</td>
+    </tr>
+    <tr>
+      <th>2059</th>
+      <td>XXXLT838036</td>
+      <td>3</td>
+      <td>17.60</td>
+      <td>30.0</td>
+      <td>-140.000</td>
+      <td>SHIP_STATION_N</td>
+      <td>1974</td>
+    </tr>
+    <tr>
+      <th>2060</th>
+      <td>XXXLT838036</td>
+      <td>4</td>
+      <td>17.30</td>
+      <td>30.0</td>
+      <td>-140.000</td>
+      <td>SHIP_STATION_N</td>
+      <td>1974</td>
+    </tr>
+    <tr>
+      <th>2061</th>
+      <td>XXXLT838036</td>
+      <td>5</td>
+      <td>18.00</td>
+      <td>30.0</td>
+      <td>-140.000</td>
+      <td>SHIP_STATION_N</td>
+      <td>1974</td>
+    </tr>
+  </tbody>
+</table>
+<p>2062 rows × 7 columns</p>
+</div>
+
+
+
+
+```python
+from matplotlib import pyplot as plt
+import seaborn as sns 
+```
+
+Write a plot_line function! The function would generate a line plot for monthly temperature change for each station, color separated by northern or southern hemispheres.
+
+
+```python
+
+def plot_line(df):
+    #return sns.lineplot(x="Month", y="Temp",
+             #style="NAME", hue = 'LATITUDE', palette = 'vlag',
+             #data=df)
+    fig = px.line(df, x="Month", y="Temp", color = 'LATITUDE',
+                  title="Monthly temperature change for latitude of "
+                  +str(df['LATITUDE'].unique()[0])
+                  ,line_group="NAME",
+                 hover_name="NAME")
+    return fig#.show()
+```
+
+
+```python
+fig = plot_line(df)
+```
+{% include p4-1.html %}
+
+```python
+write_html(fig, "p4_1.html")
+```
+
+Trying the query and plot functions with latitude of 30, we were able to observe some patterns: for southern hemisphere countries, their mid-year temperatures tends to be cooler, and that is the opposite for northern hemisphere countries. This is intuitively correct, but we might observe that the slop for change for each station, even in the same hemisphere, might be different. Therefore, it might be helpful to plot the monthly temperature change for stations as grouped by continents.
+
+The url below provides a dataset containing country names, their codes, and their corresponding continents.
+
+
+```python
+CCcode = pd.read_csv('ContinentsCountries.csv')
+#https://coronadatasource.org/open-data/geo-data/world-regions-continents-countries/
+```
+
+We first select the needed columns.
+
+
+```python
+CCcode = CCcode[['Country Name (usual)', 'Continent' , 'Continent Code']]
+```
+
+
+```python
+CCcode
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Country Name (usual)</th>
+      <th>Continent</th>
+      <th>Continent Code</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Afghanistan</td>
+      <td>Asia</td>
+      <td>AS</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>?land Islands</td>
+      <td>Europe</td>
+      <td>EU</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Albania</td>
+      <td>Europe</td>
+      <td>EU</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Algeria</td>
+      <td>Africa</td>
+      <td>AF</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>American Samoa</td>
+      <td>Oceania</td>
+      <td>OC</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>248</th>
+      <td>Zimbabwe</td>
+      <td>Africa</td>
+      <td>AF</td>
+    </tr>
+    <tr>
+      <th>249</th>
+      <td>Kosovo</td>
+      <td>Europe</td>
+      <td>EU</td>
+    </tr>
+    <tr>
+      <th>250</th>
+      <td>Netherlands Antilles</td>
+      <td>North America</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>251</th>
+      <td>Others</td>
+      <td>Others</td>
+      <td>XX</td>
+    </tr>
+    <tr>
+      <th>252</th>
+      <td># Undefined</td>
+      <td>Others</td>
+      <td>XX</td>
+    </tr>
+  </tbody>
+</table>
+<p>253 rows × 3 columns</p>
+</div>
+
+
+
+
+```python
+CCcode['Continent'].unique()
+```
+
+
+
+
+    array(['Asia', 'Europe', 'Africa', 'Oceania', 'North America',
+           'Antarctica', 'South America', 'Others'], dtype=object)
+
+
+
+As usual, we add the country-continent code dataset to the temps database
+
+
+```python
+conn = sqlite3.connect("temps.db")
+CCcode.to_sql("CCcode", conn, if_exists = "replace", index = False)
+conn.close()
+```
+
+    /Users/feishu/opt/anaconda3/envs/PIC16B/lib/python3.7/site-packages/pandas/core/generic.py:2789: UserWarning:
+    
+    The spaces in these column names will not be changed. In pandas versions < 0.14, spaces were converted to underscores.
+    
+
+
+Now, we create a query to return a dataframe with countries' yearly temperature, with specified continents, in a specific year
+
+
+```python
+def query_temp_continent(year):
+    '''return a table with countries' yearly temperature, marked by continent,
+    in a specific year
+    '''
+    conn = sqlite3.connect("temps.db")
+    cmd = \
+    """
+    SELECT T.id, T.month, T.temp, C.name, T.year, O.continent
+    FROM temperatures T
+    LEFT JOIN stations S ON T.id = S.id
+    LEFT JOIN countries C ON S.id_ = C.`fips 10-4`
+    LEFT JOIN cccode O ON O.`country name (usual)` = C.name
+    WHERE T.year =?
+    """
+    params = (year , )
+
+    df = pd.read_sql_query(cmd,conn, params = params )
+    #df_south = pd.read_sql_query(cmd_s, conn)
+    conn.close()
+    return df
+```
+
+
+```python
+df3 = query_temp_continent(1969)
+```
+
+
+```python
+df3
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>Month</th>
+      <th>Temp</th>
+      <th>Name</th>
+      <th>Year</th>
+      <th>Continent</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>ACW00011604</td>
+      <td>1</td>
+      <td>-0.81</td>
+      <td>Antigua and Barbuda</td>
+      <td>1969</td>
+      <td>North America</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>ACW00011604</td>
+      <td>2</td>
+      <td>-4.41</td>
+      <td>Antigua and Barbuda</td>
+      <td>1969</td>
+      <td>North America</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>ACW00011604</td>
+      <td>3</td>
+      <td>-1.32</td>
+      <td>Antigua and Barbuda</td>
+      <td>1969</td>
+      <td>North America</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>ACW00011604</td>
+      <td>4</td>
+      <td>5.50</td>
+      <td>Antigua and Barbuda</td>
+      <td>1969</td>
+      <td>North America</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>ACW00011604</td>
+      <td>5</td>
+      <td>10.15</td>
+      <td>Antigua and Barbuda</td>
+      <td>1969</td>
+      <td>North America</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>164000</th>
+      <td>ZIXLT622116</td>
+      <td>8</td>
+      <td>14.60</td>
+      <td>Zimbabwe</td>
+      <td>1969</td>
+      <td>Africa</td>
+    </tr>
+    <tr>
+      <th>164001</th>
+      <td>ZIXLT622116</td>
+      <td>9</td>
+      <td>17.80</td>
+      <td>Zimbabwe</td>
+      <td>1969</td>
+      <td>Africa</td>
+    </tr>
+    <tr>
+      <th>164002</th>
+      <td>ZIXLT622116</td>
+      <td>10</td>
+      <td>21.00</td>
+      <td>Zimbabwe</td>
+      <td>1969</td>
+      <td>Africa</td>
+    </tr>
+    <tr>
+      <th>164003</th>
+      <td>ZIXLT622116</td>
+      <td>11</td>
+      <td>20.40</td>
+      <td>Zimbabwe</td>
+      <td>1969</td>
+      <td>Africa</td>
+    </tr>
+    <tr>
+      <th>164004</th>
+      <td>ZIXLT622116</td>
+      <td>12</td>
+      <td>19.10</td>
+      <td>Zimbabwe</td>
+      <td>1969</td>
+      <td>Africa</td>
+    </tr>
+  </tbody>
+</table>
+<p>164005 rows × 6 columns</p>
+</div>
+
+
+
+Now, we create a plot function that plots the monthly change of temperature colorized by countries. The function will be supplied to the future groupby and apply method.
+
+
+```python
+def plot_line_cont2(df):
+    cont = df['Continent'].unique()
+    year = df['Year'].unique()
+    fig = px.scatter(df, x="Month", y="Temp", color="Name",
+               hover_name="Name",
+        title = 'Monthly avg Temperature of countries in ' + cont[0] + ' in ' + str(year))
+    fig.show()
+    write_html(fig, cont[0] + ".html")
+```
+
+
+```python
+df3.groupby(['Continent']).apply(plot_line_cont2)
+```
+{% include africa.html %}
+
+{% include antarctica.html %}
+
+{% include asia.html %}
+
+{% include europe.html %}
+
+{% include north-America.html %}
+
+{% include south-America.html %}
+
+{% include oceania.html %}
+
+
+From the above graphs, we could observe that monthly temperature change also has some patterns corresponding to different continents. In Asia, Europe, and North America, mid-year temperature tends to be the highest. While for South America and Antarctica, things are the opposite. Perhaps that's why Santa Claus wears T-shirts in these countries!
+
+
+```python
+
+```
