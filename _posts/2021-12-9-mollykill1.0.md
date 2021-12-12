@@ -4,7 +4,7 @@ title: Generative Model of Novel Inhibitor for SARS CoV 3C-like Protease
 ---
 
 ## Introduction
-This project is aimed to build a Graphic GAN model that would aid drug design processes. For demonstration, the project is expected to learn graphical features of the molecules that are experimentally tested with inhibition effect for the specific protein SARS coronavirus 3C-like Protease (3CLPro) . Then, the model would develop a reasonable way to generate potential novel molecules inhibitors' graphically representations. After that, with a defeaturizer, the graphical representations would be converted into visualizable molecule formats. 
+This project is aimed to build a Graphic GAN model that would aid drug design processes. The project is also hosted on github in the following link: [https://github.com/susanzhang233/mollykill](https://github.com/susanzhang233/mollykill). For demonstration, the project is expected to learn graphical features of the molecules that are experimentally tested with inhibition effect for the specific protein SARS coronavirus 3C-like Protease (3CLPro) . Then, the model would develop a reasonable way to generate potential novel molecules inhibitors' graphically representations. After that, with a defeaturizer, the graphical representations would be converted into visualizable molecule formats. 
 
 #### Intro to GAN
 ![Screen Shot 2021-06-08 at 7 40 49 PM](https://user-images.githubusercontent.com/67823308/121478869-0a7f7980-c9fc-11eb-99b0-b5ab283cd386.png)
@@ -20,25 +20,7 @@ The dataset is also hosted [here](https://github.com/susanzhang233/mollykill/blo
 - [`example.ipynb`](https://github.com/susanzhang233/mollykill/blob/main/example.ipynb) exemplifies the model usage
 
 
-
-## Limitations(Future work)
-- Currently, the generation of molecules is limited to a specific length that is shorter than most molecules in the real world. Future work involving some concepts of Conditional GAN might be employed.
-- The dimension of the discriminator might be improved by adding more features of the molecules(ie. hybridization, stereochemistry, etc)
-- The efficiency of the featurizer in treating edges informations might be improved(viable representation of rings, etc)
-
-
-
-## Acknowledgements
-
-- Where I've obtained my dataset: [https://github.com/yangkevin2/coronavirus_data/tree/master/data](https://github.com/yangkevin2/coronavirus_data/tree/master/data)
-- A nice introduction video of GAN structure: [https://github.com/whoIsTheGingerBreadMan/YoutubeVideos](https://github.com/whoIsTheGingerBreadMan/YoutubeVideos)
-- A nice introduction blogpost: [https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/](https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/)
-- MolGAN, a great previous work of related field: [https://arxiv.org/pdf/1805.11973.pdf](https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/)
-
-
 ## Demonstration:
-
-
 
 ## Setup
 
@@ -140,15 +122,6 @@ for _ in input_df:
 true['length'] = df_length #create a new column containing each molecule's length
 ```
 
-    /Users/feishu/opt/anaconda3/envs/my-rdkit-env/lib/python3.7/site-packages/ipykernel_launcher.py:1: SettingWithCopyWarning: 
-    A value is trying to be set on a copy of a slice from a DataFrame.
-    Try using .loc[row_indexer,col_indexer] = value instead
-    
-    See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-      """Entry point for launching an IPython kernel.
-
-
-
 ```python
 true = true[true['length']>num_atoms] #Here we leave only the ones longer than 6
 input_df = true['smiles']
@@ -157,7 +130,8 @@ input_df_smiles = input_df.apply(Chem.MolFromSmiles) #convert the smiles represe
 ```
 
 Now, we are ready to apply the `featurizer` function to our molecules to convert them into graphs with nodes and edges for training.
-
+![image](https://user-images.githubusercontent.com/67823308/145701178-48e6a5f6-a03b-4579-830e-a5841c56b245.png)
+The logic behind the featurizer is to convert each molecule into an *adjacency* *matrix* storing bond informations and a *node* *array* with each atom's features(here we only included atomic number).
 
 ```python
 #input_df = input_df.apply(Chem.MolFromSmiles) 
@@ -213,11 +187,14 @@ Here we'll first initiate a discriminator and a generator model with the corresp
 ```python
 disc = model.make_discriminator(num_atoms)
 ```
-
+The pipeline of the discriminator is shown below:
+![image](https://user-images.githubusercontent.com/67823308/145700895-96d7e07b-114d-42da-b82a-01c0bf35d0e0.png)
 
 ```python
 gene = model.make_generator(num_atoms, noise_input_shape = 100)
 ```
+The pipeline of the generator is shown below:
+![image](https://user-images.githubusercontent.com/67823308/145700879-808fa554-c0fe-4bcf-a0f3-74b00d3b4e42.png)
 
 Then, with the `train_batch` function, we'll supply the necessary inputs and train our network. Upon some experimentations, an epoch of around 160 would be nice for this dataset.
 
@@ -231,7 +208,8 @@ generator_trained = model.train_batch(
     )
 ```
 
-![png](example_files/example_35_1.png)
+![example_35_1](https://user-images.githubusercontent.com/67823308/145700754-1a8c564d-df61-4bbb-a743-6469edcd914f.png)
+
     
 
 There are two possible kind of failures regarding a GAN model: model collapse and failure of convergence. Model collapse would often mean that the generative part of the model wouldn't be able to generate diverse outcomes. Failure of convergence between the generative and the discriminative model could likely way be identified as that the loss for the discriminator has gone to zero or close to zero. 
@@ -286,12 +264,9 @@ Chem.MolToSmiles(cat)
 
     'C#O=N=B=FC'
 
+Here are some examples of molecules generated by the model. Though some molecules may appear to be not legit, a similar trend among these molecules preliminarily demonstrates that we have get the model working.
 
-
-
-```python
-Chem.MolFromSmiles(Chem.MolToSmiles(cat))
-```
+![image](https://user-images.githubusercontent.com/67823308/145700902-fb56103d-38f2-4727-a8a7-b5622e2c963b.png)
 
 
 
@@ -331,7 +306,16 @@ DataStructs.FingerprintSimilarity(Chem.RDKFingerprint(Chem.MolFromSmiles("[Li]NB
 
 
 
+## Limitations(Future work)
+- Currently, the generation of molecules is limited to a specific length that is shorter than most molecules in the real world. Future work involving some concepts of Conditional GAN might be employed.
+- The dimension of the discriminator might be improved by adding more features of the molecules(ie. hybridization, stereochemistry, etc)
+- The efficiency of the featurizer in treating edges informations might be improved(viable representation of rings, etc)
 
-```python
 
-```
+
+## Acknowledgements
+
+- Where I've obtained my dataset: [https://github.com/yangkevin2/coronavirus_data/tree/master/data](https://github.com/yangkevin2/coronavirus_data/tree/master/data)
+- A nice introduction video of GAN structure: [https://github.com/whoIsTheGingerBreadMan/YoutubeVideos](https://github.com/whoIsTheGingerBreadMan/YoutubeVideos)
+- A nice introduction blogpost: [https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/](https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/)
+- MolGAN, a great previous work of related field: [https://arxiv.org/pdf/1805.11973.pdf](https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/)
